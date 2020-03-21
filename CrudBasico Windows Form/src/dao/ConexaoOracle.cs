@@ -10,7 +10,8 @@ namespace CrudBasico_Windows_Form.src.dao
 {
     public class ConexaoOracle
     {
-        public static string connectionString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=gsc-dbora01)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=desenv)));User ID=botDB;Password=12345";
+        public static string connectionString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=DB-PC)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=DESENV)));User ID=root;Password=12345";//
+        //public static string connectionString = "Data Source=DESENV;Persist Security Info=True;User ID=root;Password=12345;";
 
         public static bool ConexaoDesenv()
         {
@@ -39,6 +40,8 @@ namespace CrudBasico_Windows_Form.src.dao
         public static DataTable RetornaDados(string select)
         {
             OracleConnection con = new OracleConnection(connectionString);
+
+            
             DataTable ds = new DataTable();
             if (ConexaoDesenv())
             {
