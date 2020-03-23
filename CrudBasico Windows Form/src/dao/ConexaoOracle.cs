@@ -10,7 +10,8 @@ namespace CrudBasico_Windows_Form.src.dao
 {
     public class ConexaoOracle
     {
-        public static string connectionString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=gsc-dbora01)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=desenv)));User ID=botDB;Password=12345";
+        public static string connectionString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=DB-PC)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=DESENV)));User ID=root;Password=12345";//
+        //public static string connectionString = "Data Source=DESENV;Persist Security Info=True;User ID=root;Password=12345;";
 
         public static bool ConexaoDesenv()
         {
@@ -39,6 +40,8 @@ namespace CrudBasico_Windows_Form.src.dao
         public static DataTable RetornaDados(string select)
         {
             OracleConnection con = new OracleConnection(connectionString);
+
+            
             DataTable ds = new DataTable();
             if (ConexaoDesenv())
             {
@@ -83,6 +86,26 @@ namespace CrudBasico_Windows_Form.src.dao
             }
         }
 
+        public static void ComandoComParametro(string comando, byte[] anexo)
+        {
+            OracleConnection con = new OracleConnection(connectionString);
+            OracleCommand comandosql = new OracleCommand();
+
+            if (ConexaoDesenv())
+            {
+                comandosql.CommandText = comando;
+                comandosql.Connection = con;
+                comandosql.Parameters.Add(":anexo", anexo);
+                con.Open();
+                comandosql.ExecuteNonQuery();
+                con.Close();
+            }
+            else
+            {
+                System.Console.WriteLine("Falha de conexão com o banco de dados!");
+            }
+        }      
+
         public static bool ValidaExistencia(string select)
         {
             OracleConnection con = new OracleConnection(connectionString);
@@ -109,26 +132,6 @@ namespace CrudBasico_Windows_Form.src.dao
             }
 
             return ds.Rows.Count > 0 ? true : false;
-        }
-
-        public static void InsereAnexo(string id_documento, byte[] anexo, string nome_arquivo)
-        {
-            OracleConnection con = new OracleConnection(connectionString);
-            OracleCommand comandosql = new OracleCommand();
-
-            if (ConexaoDesenv())
-            {
-                comandosql.CommandText = $"insert into bot_anexos_recebidos values ('', {id_documento}, '{nome_arquivo}', :anexo)";
-                comandosql.Parameters.Add(":anexo", anexo);
-                comandosql.Connection = con;
-                con.Open();
-                comandosql.ExecuteNonQuery();
-                con.Close();
-            }
-            else
-            {
-                System.Console.WriteLine("Falha de conexão com o banco de dados!");
-            }
         }
     }
 }
