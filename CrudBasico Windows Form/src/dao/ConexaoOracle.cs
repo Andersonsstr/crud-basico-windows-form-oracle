@@ -86,6 +86,26 @@ namespace CrudBasico_Windows_Form.src.dao
             }
         }
 
+        public static void ComandoComParametro(string comando, byte[] anexo)
+        {
+            OracleConnection con = new OracleConnection(connectionString);
+            OracleCommand comandosql = new OracleCommand();
+
+            if (ConexaoDesenv())
+            {
+                comandosql.CommandText = comando;
+                comandosql.Connection = con;
+                comandosql.Parameters.Add(":anexo", anexo);
+                con.Open();
+                comandosql.ExecuteNonQuery();
+                con.Close();
+            }
+            else
+            {
+                System.Console.WriteLine("Falha de conexão com o banco de dados!");
+            }
+        }      
+
         public static bool ValidaExistencia(string select)
         {
             OracleConnection con = new OracleConnection(connectionString);
@@ -112,26 +132,6 @@ namespace CrudBasico_Windows_Form.src.dao
             }
 
             return ds.Rows.Count > 0 ? true : false;
-        }
-
-        public static void InsereAnexo(string id_documento, byte[] anexo, string nome_arquivo)
-        {
-            OracleConnection con = new OracleConnection(connectionString);
-            OracleCommand comandosql = new OracleCommand();
-
-            if (ConexaoDesenv())
-            {
-                comandosql.CommandText = $"insert into bot_anexos_recebidos values ('', {id_documento}, '{nome_arquivo}', :anexo)";
-                comandosql.Parameters.Add(":anexo", anexo);
-                comandosql.Connection = con;
-                con.Open();
-                comandosql.ExecuteNonQuery();
-                con.Close();
-            }
-            else
-            {
-                System.Console.WriteLine("Falha de conexão com o banco de dados!");
-            }
         }
     }
 }

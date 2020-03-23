@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 namespace CrudBasico_Windows_Form
@@ -12,6 +13,8 @@ namespace CrudBasico_Windows_Form
         List<TextBox> campos = new List<TextBox>();
         string idSelected;
         OpenFileDialog ofSelecionaImagem;
+        byte[] imageBytes;
+        string filtro = "";
 
         public void adicionaCampos()
         {
@@ -46,13 +49,13 @@ namespace CrudBasico_Windows_Form
                     string efetuado = "";
                     if (btnCadastrar.Text == "Cadastrar")
                     {
-                        ConexaoOracle.ExecutaComando($"insert into maquina values ('', '{txtHostname.Text}', '{txtIP.Text}', '{txtModelo.Text}', '{txtSetor.Text}', '', sysdate)");
+                        ConexaoOracle.ComandoComParametro($"insert into maquina values ('', '{txtHostname.Text}', '{txtIP.Text}', '{txtModelo.Text}', '{txtSetor.Text}', :anexo, sysdate)", imageBytes);
                         efetuado = "cadastrada";
                     }
 
                     else if (btnCadastrar.Text == "Editar")
                     {
-                        ConexaoOracle.ExecutaComando($"update maquina set hostname = '{txtHostname.Text}', ip = '{txtIP.Text}', modelo = '{txtModelo.Text}', setor = '{txtSetor.Text}' where id = {idSelected}");
+                        ConexaoOracle.ComandoComParametro($"update maquina set hostname = '{txtHostname.Text}', ip = '{txtIP.Text}', modelo = '{txtModelo.Text}', setor = '{txtSetor.Text}', foto = :anexo where id = {idSelected}", imageBytes);
                         efetuado = "editada";
                         btnVoltar.PerformClick();
                     }
@@ -74,7 +77,8 @@ namespace CrudBasico_Windows_Form
 
         private void atualizarMaquinas()
         {
-            dgDados.DataSource = ConexaoOracle.RetornaDados("SELECT M.ID, M.HOSTNAME, M.IP, M.MODELO, M.SETOR, M.DATA_CADASTRO FROM MAQUINA M");
+            dgDados.DataSource = ConexaoOracle.RetornaDados($"SELECT M.ID, M.HOSTNAME, M.IP, M.MODELO, M.SETOR, M.DATA_CADASTRO FROM MAQUINA M WHERE M.HOSTNAME LIKE '%{filtro}%'");
+
         }
 
         private Boolean validaCampos()
@@ -97,6 +101,8 @@ namespace CrudBasico_Windows_Form
             {
                 campos[i].Clear();
             }
+
+            pbFoto.Image = null;
         }
 
         private void dgDados_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -109,6 +115,27 @@ namespace CrudBasico_Windows_Form
             btnCadastrar.Text = "Editar";
             btnDeletar.Visible = true;
             btnVoltar.Visible = true;
+
+            CarregaImagemBanco();
+        }
+
+
+        public void CarregaImagemBanco()
+        {
+            DataTable dtfoto = ConexaoOracle.RetornaDados($"select foto from maquina where id = {idSelected}");
+            if(!String.IsNullOrEmpty(dtfoto.Rows[0]["FOTO"].ToString()))
+            {
+                imageBytes = (byte[])dtfoto.Rows[0]["FOTO"];
+
+                using (MemoryStream ms = new MemoryStream(imageBytes))
+                {
+                    pbFoto.Image = Image.FromStream(ms);
+                };
+            }
+            else
+            {
+                pbFoto.Image = null;
+            }
         }
 
         private void btnVoltar_Click(object sender, EventArgs e)
@@ -119,7 +146,6 @@ namespace CrudBasico_Windows_Form
             limparCampos();
             dgDados.CurrentCell = null;
             limparCelulas();
-
         }
 
         private void btnDeletar_Click(object sender, EventArgs e)
@@ -139,19 +165,40 @@ namespace CrudBasico_Windows_Form
         }
 
         private void lblCarregaFoto_Click(object sender, EventArgs e)
-        {         
+        {
             if (ofSelecionaImagem.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
                     var caminhoImagem = ofSelecionaImagem.FileName;
                     pbFoto.Image = Image.FromFile(caminhoImagem);
+
+                    using (Image image = Image.FromFile(caminhoImagem))
+                    {
+                        using (MemoryStream m = new MemoryStream())
+                        {
+                            image.Save(m, image.RawFormat);
+                            imageBytes = m.ToArray();
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Erro ao carregar arquivo:" + ex.Message, "Erro!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            filtro = lblPesquisa.Text;
+            limparCelulas();
+            atualizarMaquinas();
+        }
+
+        private void lblPesquisa_KeyPress(object sender, KeyPressEventArgs e)
+        {
+                button1.PerformClick();           
         }
     }
 }
